@@ -1,6 +1,5 @@
 function output = gamma_rnd(lambda, alpha, m)
-% lambda: expected event-rate
-% m: number of returned random variables
+% Generate m Gamma distributed pseudo-random numbers.
 
 output = int16.empty(m, 0);
 

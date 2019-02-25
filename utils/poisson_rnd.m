@@ -1,5 +1,7 @@
 function output = poisson_rnd(lambda, m)
-% basic idea: add up time intervals between events, which are exponentially distributed
+% Generate m Poisson distributed pseudo-random numbers. 
+% Basic idea: add up time intervals between events which are exponentially
+% distributed.
 
 % lambda: expected event-rate
 % m: number of returned random variables
