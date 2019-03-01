@@ -8,7 +8,8 @@ function output = poisson_rnd(lambda, m)
 
 % initialization
 L = exp(-lambda);
-output = int16.empty(m, 0);
+%output = int16.empty(m, 0);
+output = zeros(1, m, 'double');
 
 for i = 1:m
     n = 0;

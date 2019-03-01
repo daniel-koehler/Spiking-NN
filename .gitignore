@@ -1,10 +1,9 @@
 *.o
 
 *.asv
-
+test.m
 /TestODESolver
 /utils/evaluate_poisson.m
 /util/poisson_rv.m
 /util/poisson_rv2.m
 /C++
-/SynapseModels/cuba_analytic_solution2.m
