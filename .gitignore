@@ -1,5 +1,5 @@
 *.o
-
+*.pyc
 *.asv
 test.m
 /TestODESolver

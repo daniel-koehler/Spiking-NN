@@ -1,0 +1,142 @@
+clear
+%% Define parameters
+% Simulation parameters
+dt = 0.1;   
+t_start = 0;
+t_end = 200;
+t_input = 50;       % duration for which the input neurons fire
+
+% Network parameters
+n = 10000;          % number of neurons
+ratio_EI = 4;       % ratio excitatory to inhibitory neurons
+n_E = round((n * ratio_EI)/(ratio_EI + 1));
+n_I = n - n_E;
+lambda = 1;       % expected firing rate of external input neurons
+p_conn = 0.02;      % connection probability
+
+% Model parameters
+cuba_parameters     
+
+% Select visualization: NEURON, RASTER, ISI
+PLOT = "RASTER";
+
+%% Initialize network
+
+% storage of connections:
+% E.g. neuron 4 is connected to neurons with indices 20 and 267, then
+% connections{i} = [20 267]
+connections = cell(n, 1);
+n_syn = round(p_conn * (n-1));      % number of synapses per neuron
+for i = 1:n
+    connections{i} = ceil(n*rand(1,n_syn));
+end
+
+Y = zeros(n, 3, 'double');           % contains state values of each neuron
+% initial condition
+%Y(:,1) = V_Rest;
+Y(:,1) = V_Rest + 10*rand(n,1);
+% Y(:,2) = 8*rand(n,1);
+% Y(:,2) = 2*rand(n,1);
+
+spikes_E = [];             % contains indices of neurons spiking at current time step
+spikes_I = [];
+t_ela = zeros(1, n);       % contains time elapsed since last spike of each neuron
+t_ela(:) = T_Ref;
+
+% variables for plotting
+neuron_index = [];
+t_raster = [];
+voltage_plot = [];
+current_plotE = [];
+current_plotI = [];
+spike_times = cell(n, 1);
+
+tic
+%% Simulation loop
+for t = t_start:dt:t_end    
+    % External stimulation
+    if t <= t_input
+        Y(:,2) = Y(:,2) + i_0E * transpose(poisson_rnd(lambda, n));
+    end
+    
+    % Add constant current
+    %Y(:,2) = Y(:,2) + 0.069;
+    
+    % Internal stimulation
+    for spike = spikes_E
+        Y(connections{spike}, 2) = Y(connections{spike}, 2) + i_0E;
+    end
+    for spike = spikes_I
+        Y(connections{spike}, 3) = Y(connections{spike}, 3) + i_0I;
+    end
+    spikes_E = [];
+    spikes_I = [];
+
+    % Solve ODEs for each neuron
+    Y = cuba_analytic(dt, Y);
+    for i = 1:n 
+        if (Y(i, 1) >= V_Theta) && (t_ela(i) >= T_Ref)  % neuron spiking?
+            if i <= n_E
+                spikes_E = [spikes_E i];   
+            else               
+                spikes_I = [spikes_I i];
+            end
+            spike_times{i} = [spike_times{i} t];
+        end        
+    end
+    t_ela = t_ela + dt;
+    
+    % reset membrane voltage and elapsed time of spiking neurons
+    Y([spikes_E spikes_I], 1) = V_Rest;   
+    t_ela([spikes_E spikes_I]) = 0;
+       
+    voltage_plot = [voltage_plot Y(151,1)];
+    current_plotE = [current_plotE Y(151,2)];
+    current_plotI = [current_plotI Y(151,3)];
+    
+    
+    % Rasterplot
+    neuron_index = [neuron_index spikes_E spikes_I];    % add neurons spiking this time step
+    s = size(spikes_E) + size(spikes_I);
+    t_raster = [t_raster repmat(t, 1, s(2))];           % add current time for each spiking neuron
+end
+toc
+
+mean(Y(:,1))
+
+ISI = [];
+for i = 1:n
+    a = diff(spike_times{i});
+    ISI = [ISI a];
+end
+
+%% Plotting
+figure('units','normalized','outerposition',[0 0 1 1])
+t_plot = t_start:dt:t_end;
+linewidth = 1.5;
+
+if PLOT == "NEURON"
+    subplot(2,1,1)
+    plot(t_plot, voltage_plot, 'lineWidth', linewidth)
+    ylabel('V_M [mV]')
+    xlabel('t [ms]')
+    grid on
+    subplot(2,1,2)
+    plot(t_plot, current_plotE, 'lineWidth', linewidth)
+    hold on
+    plot(t_plot, current_plotI, 'lineWidth', linewidth)
+    ylabel('Synaptic current [mA]')
+    xlabel('t [ms]')
+    legend('I_E', 'I_I')
+    grid on
+elseif PLOT == "RASTER"
+    scatter(t_raster, neuron_index, 2, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
+    ylabel('neuron #')
+    xlabel('t [ms]')
+elseif PLOT == "ISI"
+    hist(ISI, 90)
+    xlabel('Interspike interval [ms]')
+    ylabel('#')
+    xlim([0 50])
+end
+ 

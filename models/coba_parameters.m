@@ -21,5 +21,5 @@ V_Peak = 0.15;  % peak voltage for PSP, used to calculate current per synapse [m
 T_Ref = 5;      % refractory period of the neuron [ms]
 
 % Excitatory and inhibitory conductance values [mS]
-g_0E = 0.0008;
-g_0I = 0.0015;
+dg_E = 0.0008;
+dg_I = 0.0015;

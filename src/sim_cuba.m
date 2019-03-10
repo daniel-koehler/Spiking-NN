@@ -77,7 +77,7 @@ while t_curr < t_end
            Y(2) = Y(2) + i_0E * spikes_E(step);
            Y(3) = Y(3) + i_0I * spikes_I(step); 
        case 2   % Gamma-generated input
-           spikes_E(step) = gamma_rnd(lambda_E, 3, 1);
+           spikes_E(step) = gamma_nd(lambda_E, 3, 1);
            spikes_I(step) = gamma_rnd(lambda_I, 3, 1);
            Y(2) = Y(2) + i_0E * spikes_E(step);
            Y(3) = Y(3) + i_0I * spikes_I(step); 

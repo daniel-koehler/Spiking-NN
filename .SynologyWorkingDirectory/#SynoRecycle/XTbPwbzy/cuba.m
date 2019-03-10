@@ -1,4 +1,4 @@
-function dY = cuba(t, Y)
+function dY = vogels_abbott(t, Y)
 
 % Model parameters:
 global T_M;     % time constant of IAF-neuron

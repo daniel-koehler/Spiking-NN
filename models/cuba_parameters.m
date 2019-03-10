@@ -12,7 +12,9 @@ T_I = 10;       % [ms]
 
 V_Rest = -60;   % [mV]
 V_Theta = -50;  % spiking threshold voltage [mV]
-V_Peak = 0.15;  % peak voltage for PSP [mV] (used to calculate current per synapse)
+
+EPSP = 0.15;      % peak voltage of EPSP [mV]
+IPSP = 2.25;    % peak voltage of IPSP [mv]
 
 T_Ref = 5;      % refractory period of the neuron [ms]
 
@@ -20,5 +22,5 @@ T_Ref = 5;      % refractory period of the neuron [ms]
 % Calculate peak values for inhibitory and excitatory synaptic current
 t_0E = log(T_E/T_M)*(T_E*T_M)/(T_E-T_M);    
 t_0I = log(T_I/T_M)*(T_I*T_M)/(T_I-T_M);
-i_0E = V_Peak/(exp(-t_0E/T_E) - exp(-t_0E/T_M)) * (T_E-T_M)/(T_E*T_M);
-i_0I = V_Peak/(exp(-t_0I/T_I) - exp(-t_0I/T_M)) * (T_I-T_M)/(T_I*T_M);
+i_0E = EPSP/(exp(-t_0E/T_E) - exp(-t_0E/T_M)) * (T_E-T_M)/(T_E*T_M);
+i_0I = IPSP/(exp(-t_0I/T_I) - exp(-t_0I/T_M)) * (T_I-T_M)/(T_I*T_M);
