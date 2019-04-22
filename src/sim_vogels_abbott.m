@@ -3,11 +3,11 @@ clear
 % Simulation parameters
 dt = 0.1;   
 t_start = 0;
-t_end = 300;
+t_end = 1000;
 t_input = 50;       % duration for which the input neurons fire
 
 % Network parameters
-n = 10000;           % number of neurons
+n = 4000;           % number of neurons
 ratio_EI = 4;       % ratio excitatory to inhibitory neurons
 n_E = round((n * ratio_EI)/(ratio_EI + 1));
 n_I = n - n_E;
@@ -18,7 +18,7 @@ p_conn = 0.02;      % connection probability
 vogels_parameters
 
 % choose visualization: NEURON, RASTER, ISI, FIRINGRATE
-PLOT = "FIRINGRATE";
+PLOT = "ISI";
 
 
 %% Initialize network
@@ -32,11 +32,10 @@ for i = 1:n
 end
 
 Y = zeros(n, 3, 'double'); % state values of each neuron (V_M, g_E, g_I)
-%Y(:,1) = V_Rest;
-% initialize randomly
-Y(:,1) = V_Rest + 10*rand(n,1);
-Y(:,2) = 0.05*rand(n,1);
-Y(:,3) = 0.3*rand(n,1);
+% initialize membrane voltage randomly
+Y(:,1) = V_Rest + (V_Theta - V_Rest) * rand(n,1);
+Y(:,2) = 0;
+Y(:,3) = 0;
 
 spikes_E = [];             % contains indices of neurons spiking at current time step
 spikes_I = [];
@@ -51,12 +50,18 @@ conductance_E = [];
 conductance_I = [];
 spike_times = cell(n, 1);
 
+input_spikes = zeros(n,ceil((t_input-t_start)/dt));
+for i = 1:n
+    input_spikes(i,:) = poisson_rnd(lambda, ceil((t_input-t_start)/dt));
+end
 
+step = 1;
 %% Simulation loop
 for t = t_start:dt:t_end    
     % External stimulation
-    if t <= t_input
-        Y(:,2) = Y(:,2) + dg_E * transpose(poisson_rnd(lambda, n));
+    if t < t_input
+        Y(:,2) = Y(:,2) + dg_E * input_spikes(:, step);
+        step = step + 1;
     end 
     % Internal stimulation
     for spike = spikes_E
@@ -72,14 +77,19 @@ for t = t_start:dt:t_end
     % Outputs
     Y = vogels_analytic(dt, Y);
     for i = 1:n 
-        if (Y(i, 1) >= V_Theta) && (t_ela(i) >= T_Ref)  % neuron spiking?
+        if (t_ela(i) < T_Ref)           % clamp to resting potential
+            Y(i, 1) = V_Rest;        
+        elseif (Y(i, 1) >= V_Theta)     % neuron spiking?
             if i <= n_E
                 spikes_E = [spikes_E i];
             else               
                 spikes_I = [spikes_I i];
             end
             spike_times{i} = [spike_times{i} t];
-        end        
+
+        end
+        if (Y(i, 1) >= V_Theta) && (t_ela(i) >= T_Ref)  % neuron spiking?
+                    end        
     end
     Y([spikes_E spikes_I], 1) = V_Rest;
     t_ela([spikes_E spikes_I]) = 0;
@@ -124,21 +134,22 @@ if PLOT == "NEURON"
     plot(t_plot, conductance_E, 'lineWidth', linewidth)
     hold on
     plot(t_plot, conductance_I, 'lineWidth', linewidth)
-    ylabel('Synaptic conductance [µS]')
+    ylabel('Synaptic conductance [nS]')
     xlabel('t [ms]')
     legend('I_E', 'I_I')
     grid on
 elseif PLOT == "RASTER"
-    scatter(t_raster, raster_index, 4, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
+    scatter(t_raster, raster_index, 2.2, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
     ylabel('neuron #')
     xlabel('t [ms]')
 elseif PLOT == "ISI"
-    histogram(ISI, 'FaceColor', [0 1 0], 'EdgeColor', [0 1 0])
+    histogram(ISI, 'Normalization','probability', 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
     xlabel('Interspike interval [ms]')
     ylabel('#')
+    grid on
     %xlim([0 200])
 elseif PLOT == "FIRINGRATE"
-    histogram(f, 'FaceColor', [0 1 0], 'EdgeColor', [0 1 0])
+    histogram(f, 30, 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
     xlabel('Firing rate [Hz]')
     ylabel('#')
 end

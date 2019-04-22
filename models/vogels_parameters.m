@@ -17,9 +17,9 @@ V_Rest = -60;   % [mV]
 E_E = 0;        % [mV]
 E_I = -80;      % [mV]
 R_M = 0.1;      % [GOhm]
-I_inj = 120;    % [µA|
-
-dg_E = 0.27;    % exc. synaptic strength [µS]
-dg_I = 4.5;     % inh. synaptic strength [µS]
+I_inj = 120;    % [pA|
+%I_inj = 0;    % [pA|
+dg_E = 0.27;    % exc. synaptic strength [nS]
+dg_I = 4.5;     % inh. synaptic strength [nS]
 V_Theta = -50;  % spiking threshold voltage [mV]
 T_Ref = 5;      % refractory period of the neuron [ms]
