@@ -23,6 +23,7 @@ function neurons = createNetwork(n, pConn, ratioExIn, varargin)
 %                   to target neuron index, weight and delay of a synapse.
 
 % parse input arguments
+%[r, g, b, isColorMap, isEmptyInput, isThreeChannel] = parseInputs(varargin{:});
 p = inputParser;
 p.addRequired('n',@isnumeric);
 p.addRequired('pConn',@isnumeric);

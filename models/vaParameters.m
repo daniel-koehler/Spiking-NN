@@ -11,7 +11,7 @@ global EEx;     % exc. reverse potential
 global EIn;     % inh. reverse potential
 global EAvg;
 global RL;      % membrane resistance
-
+global IInj;    % constant injected current
 
 tauL = 1/20;    % [ms^-1]
 tauEx = 1/5;    % [ms^-1]
@@ -23,11 +23,24 @@ EAvg = -60;
 EEx = 0;        % [mV]
 EIn = -80;      % [mV]
 RL = 0.1;       % [GOhm]
+IInj = 110;     % [pA]
 
 dgEx = 0.27;    % change in exc. synaptic conductance [nS]
 dgIn = 4.5;     % change in inh. synaptic conductance [nS]
 
 wEx = dgEx;
 wIn = -dgIn;
+wStim = 5;
 
 VTheta = 10;   % spiking threshold voltage [mV]
+
+% constants for integration used in vaFactors
+global const1;
+global const2;
+global const3;
+global const4;
+const1 = (EAvg - EEx) * RL * tauL / (tauL - tauEx);
+const2 = (EAvg - EIn) * RL * tauL / (tauL - tauIn);
+const3 = IInj*RL;
+const4 = (tauL^2 + tauEx*tauIn + tauEx*tauL + tauIn*tauL)/((tauEx + tauL)*(tauIn + tauEx));
+
