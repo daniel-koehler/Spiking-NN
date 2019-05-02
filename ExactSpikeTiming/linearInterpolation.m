@@ -1,5 +1,5 @@
 function t = linearInterpolation(y0, yh, yt, h)
-% Uses a linear interpolation of form y = (yh-y0)/h * t +y0 to calculate
+% Uses linear interpolation of form y = (yh-y0)/h * t +y0 to calculate
 % time t at which yt is reached.
 
 t = zeros(size(y0));
