@@ -2,7 +2,7 @@
 syms V_M(t)             % membrane voltage
 syms g_E(t) g_I(t)      % conductances
 syms I_inj              % constant injected current
-%I_inj = 0;
+I_inj = 0;
 syms V_Rest             % resting membrane potential
 syms E_E E_I            % resting potentials
 syms T_M T_E T_I        % INVERSE time constants

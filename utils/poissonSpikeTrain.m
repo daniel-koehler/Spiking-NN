@@ -14,6 +14,8 @@ for i = 1:n
         t = t - log(rand)*fInv;     % use inverse transform sampling
         spikeTimes{i} = [spikeTimes{i} t];
     end
-    spikeTimes{i}(end) = [];    % remove last element
+    if ~isempty(spikeTimes{i})
+        spikeTimes{i}(end) = [];    % remove last element
+    end
 end
 

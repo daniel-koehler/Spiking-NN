@@ -22,8 +22,8 @@ INPUT_MODE = 0;
 SOLVER = 0;     % solver:
 
 %vogels_parameters % get model parameters
-%va_parameters
-test
+vogels_parameters
+
 
 f_E = 10;       % avg. firing rate of excitatory synapse [Hz]
 f_I = 10;       % avg. firing rate of inhibitory synapse [Hz]
@@ -35,7 +35,7 @@ n_I = 250;      % number of inhibitory synapses
 %%
 % INPUT_MODE = 0 - Use single spikes timed at:
 t_spikes_E = [];    % timings for excitatory spikes (multiples of dt)
-t_spikes_I = [1];    % timings for inhibitory spikes (multiples of dt)
+t_spikes_I = [];    % timings for inhibitory spikes (multiples of dt)
 
 %%
 % INPUT_MODE = 1 - Use Poisson-distributed number of EPSPs and IPSPs. Where:
@@ -60,7 +60,7 @@ Y_Res2 = Y2;                      % V_M(t), I_E(t), I_I(t)
 
 %%
 % Elapsed time since the neuron fired:
-T_Ela = TRef;
+T_Ela = T_Ref;
 
 %% Simulation loop:
 step = 1;
@@ -69,13 +69,13 @@ while t_curr < t_end
    switch INPUT_MODE
        case 0   % Single spikes           
            if ismembertol(t_curr, t_spikes_E, 0.001)
-               Y1(3) = Y1(3) + wEx;
-               Y2(3) = Y2(3) + wEx;
+               Y1(3) = Y1(3) + dg_E;
+               Y2(3) = Y2(3) + dg_E;
                spikes_E(step) = 1;
            end
            if ismembertol(t_curr, t_spikes_I, 0.01)
-               Y1(4) = Y1(4) - wIn;
-               Y2(4) = Y2(4) - wIn;
+               Y1(4) = Y1(4) - dg_I;
+               Y2(4) = Y2(4) - dg_E;
                spikes_I(step) = 1;
            end
        case 1   % Poisson-generated input
@@ -91,7 +91,7 @@ while t_curr < t_end
    end
    switch SOLVER
        case 0
-           Y1 = vaAnalytic(dt, Y1);
+           Y1 = vogels_analytic(dt, Y1);
            %Y2 = test(dt, Y2);
        case 1
            [t,Y_T] = ode45(@cuba, [0 dt], Y);       

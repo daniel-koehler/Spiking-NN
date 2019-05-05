@@ -42,5 +42,5 @@ global const4;
 const1 = (EAvg - EEx) * RL * tauL / (tauL - tauEx);
 const2 = (EAvg - EIn) * RL * tauL / (tauL - tauIn);
 const3 = IInj*RL;
-const4 = (tauL^2 + tauEx*tauIn + tauEx*tauL + tauIn*tauL)/((tauEx + tauL)*(tauIn + tauEx));
+const4 = (tauL^2 + tauEx*tauIn + tauEx*tauL + tauIn*tauL)/((tauEx + tauL)*(tauIn + tauL));
 

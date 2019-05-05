@@ -7,7 +7,7 @@ t_end = 100;
 t_input = 50;       % duration for which the input neurons fire
 
 % Network parameters
-n = 1000;           % number of neurons
+n = 1;           % number of neurons
 ratio_EI = 4;       % ratio excitatory to inhibitory neurons
 n_E = round((n * ratio_EI)/(ratio_EI + 1));
 n_I = n - n_E;
@@ -18,7 +18,7 @@ p_conn = 0.02;      % connection probability
 vogels_parameters
 
 % choose visualization: NEURON, RASTER, ISI, FIRINGRATE
-PLOT = "RASTER";
+PLOT = "NEURON";
 
 
 %% Initialize network
@@ -50,11 +50,11 @@ conductance_E = [];
 conductance_I = [];
 spike_times = cell(n, 1);
 
-% input_spikes = zeros(n,ceil((t_input-t_start)/dt));
+input_spikes = zeros(n,ceil((t_input-t_start)/dt));
 % for i = 1:n
 %     input_spikes(i,:) = poisson_rnd(lambda, ceil((t_input-t_start)/dt));
 % end
-inputSpikes = poissonSpikeTrain([tStart tInput], f, n);
+%inputSpikes = poissonSpikeTrain([tStart tInput], f, n);
 
 step = 1;
 %% Simulation loop
@@ -100,9 +100,9 @@ for t = t_start:dt:t_end
     raster_index = [raster_index spikes_E spikes_I];
     s = size([spikes_E spikes_I]);
     t_raster = [t_raster repmat(t, [1, s(2)])];    
-    voltage  = [voltage Y(45,1)];
-    conductance_E  = [conductance_E Y(45,2)];    
-    conductance_I  = [conductance_I Y(45,3)];
+    voltage  = [voltage Y(1,1)];
+    conductance_E  = [conductance_E Y(1,2)];    
+    conductance_I  = [conductance_I Y(1,3)];
 end
 
 % get interspike intervals and firing rate per neuron
