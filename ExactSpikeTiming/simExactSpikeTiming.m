@@ -6,9 +6,9 @@ tStart = 0;
 tEnd = 100;
 tInput = 0;        % duration for which the input neurons fire
 % Select visualization: 'RASTER', 'NEURON', 'ISI'
-PLOT = 'NEURON';
+PLOT = 'RASTER';
 % Network parameters
-n = 1;           % number of neurons
+n = 1000;           % number of neurons
 ratioExIn = 4;      % ratio excitatory to inhibitory neurons
 pConn = 0.02;       % connection probability
 %pConn = 0.3;
@@ -64,14 +64,14 @@ for t = tStart:h:tEnd
     stateUpdate = stateBuf.read(true); % Influence of spikes in interval (t, t+h] at time t+h
   
     % Calculate subthreshold dynamics        
-    idx = stateMem(:,1) < tauRef-h | stateMem(:,1) >= tauRef;   % non emerging neurons 
+    idx = stateMem(:,1) <= tauRef-h | stateMem(:,1) > tauRef;   % non emerging neurons 
     stateMem(idx,:) = vaAnalytic(stateMem(idx,:), factorsH);
     stateMem(idx, 2:4) = stateMem(idx, 2:4) + stateUpdate(idx,:);
     
     % Neurons emerging from refractory period
-    emergingNeurons = find(stateMem(:,1) >= tauRef-h & stateMem(:,1) < tauRef);
+    emergingNeurons = find(stateMem(:,1) > tauRef-h & stateMem(:,1) <= tauRef);
     % Consider neurons emerging from refractory period at t+tEm, then the
-    % interval has to be split into (t, t+tEm] and (t+tEm, t+tEm+h]    
+    % interval has to be split into (t, t+tEm] and (t+tEm, t+h]    
     if numel(emergingNeurons >= 1)
         tEm = stateMem(emergingNeurons, 1) + h - tauRef;
         factorsT = vaFactors(tEm);
@@ -91,7 +91,8 @@ for t = tStart:h:tEnd
     end   
     
     % Collect spikes
-    spikingNeurons = find(stateMem(:,2) > VTheta);   
+    spikingNeurons = find(stateMem(:,2) > VTheta);
+    
     if numel(spikingNeurons >= 1)
         % Get 'exact' spike timing for all spiking neurons
         switch INTERPOLATION
@@ -141,7 +142,7 @@ for t = tStart:h:tEnd
     % Process input spikes
     
     if mod(t, 5) < 0.1
-        t
+        fprintf('Time step t = %1.f ms\n', t)
     end
     VPlot = [VPlot stateMem(VPlotIndex,2)];
     conductanceEx = [conductanceEx stateMem(VPlotIndex, 3)];

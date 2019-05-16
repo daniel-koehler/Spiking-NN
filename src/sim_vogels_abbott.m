@@ -7,7 +7,7 @@ t_end = 100;
 t_input = 50;       % duration for which the input neurons fire
 
 % Network parameters
-n = 1;           % number of neurons
+n = 1000;           % number of neurons
 ratio_EI = 4;       % ratio excitatory to inhibitory neurons
 n_E = round((n * ratio_EI)/(ratio_EI + 1));
 n_I = n - n_E;
@@ -18,7 +18,7 @@ p_conn = 0.02;      % connection probability
 vogels_parameters
 
 % choose visualization: NEURON, RASTER, ISI, FIRINGRATE
-PLOT = "NEURON";
+PLOT = "RASTER";
 
 
 %% Initialize network
@@ -51,18 +51,23 @@ conductance_I = [];
 spike_times = cell(n, 1);
 
 input_spikes = zeros(n,ceil((t_input-t_start)/dt));
-% for i = 1:n
-%     input_spikes(i,:) = poisson_rnd(lambda, ceil((t_input-t_start)/dt));
-% end
-%inputSpikes = poissonSpikeTrain([tStart tInput], f, n);
+for i = 1:n
+    input_spikes(i,:) = poisson_rnd(lambda, ceil((t_input-t_start)/dt));
+end
+% input_spikes = poissonSpikeTrain([t_start t_input], lambda, n);
 
 step = 1;
 %% Simulation loop
-for t = t_start:dt:t_end    
+for t = t_start:dt:t_end
+%     for i = 1:n 
+%         if ~isempty(input_spikes{i})
+%             Y(i,2) = Y(i,2) + dg_E * sum(ismembertol(input_spikes{i}, t, 0.05));
+%         end
+%     end
     % External stimulation
     if t < t_input
-        %Y(:,2) = Y(:,2) + dg_E * input_spikes(:, step);
-        Y(:,2) = Y(:,2) + 5 * input_spikes(:, step);
+        Y(:,2) = Y(:,2) + dg_E * input_spikes(:, step);
+        %Y(:,2) = Y(:,2) + 5 * input_spikes(:, step);
         step = step + 1;
     end 
     % Internal stimulation

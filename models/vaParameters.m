@@ -9,7 +9,7 @@ global tauRef;  % refractory period
 global EL;      % leak reverse potential
 global EEx;     % exc. reverse potential
 global EIn;     % inh. reverse potential
-global EAvg;
+global EAvg;    % resting potential
 global RL;      % membrane resistance
 global IInj;    % constant injected current
 
