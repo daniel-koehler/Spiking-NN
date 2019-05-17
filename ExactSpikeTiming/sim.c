@@ -1,9 +1,29 @@
 #include <stdlib.h> // rand()
 #include <stdio.h> // printf()
-#include "models.h"
+#include "neuro.h"
 
 #define true 1
 #define false 0
+
+neuron_model_t vogelsabbott = {
+        .state_size = 5,
+        .E_rest     = 0.0,
+        .E_L        = -60.0,
+        .E_ex       = 0.0,
+        .E_in       = -80.0,
+        .d_gex      = 0.27,
+        .d_gin      = 4.5,
+        .d_gstim    = 0.27,
+        .E_avg      = 0.0,
+        .I_inj      = 120.0,
+        .R_L        = 0.1,
+        .V_th       = 10.0,
+        .tau_ref    = 5.0,
+        .tau_ex     = 1.0 / 10.0,
+        .tau_in     = 1.0 / 5.0,
+        .tau_stim   = 1.0 / 10.0,
+        .tau_L      = 1.0 / 20.0,
+};
 
 typedef struct neuron_t {
     int index;
@@ -36,7 +56,7 @@ typedef struct sim_t {
     int rand_delays;
     interpolation_t interpolation; // order of interpolation for exact spike timing
 
-    float *state_mem
+    float *state_mem;
 } sim_t;
 
 
@@ -49,6 +69,28 @@ void create_network(){
 
 
 int main(void){
+    neuron_model_t vogelsabbott;
+vogelsabbott = (neuron_model_t) {
+        .state_size = 5,
+        .E_rest     = 0.0,
+        .E_L        = -60.0,
+        .E_ex       = 0.0,
+        .E_in       = -80.0,
+        .d_gex      = 0.27,
+        .d_gin      = 4.5,
+        .d_gstim    = 0.27,
+        .E_avg      = 0.0,
+        .I_inj      = 120.0,
+        .R_L        = 0.1,
+        .V_th       = 10.0,
+        .tau_ref    = 5.0,
+        .tau_ex     = 1.0 / 10.0,
+        .tau_in     = 1.0 / 5.0,
+        .tau_stim   = 1.0 / 10.0,
+        .tau_L      = 1.0 / 20.0,
+};
+
+
     sim_t sim;
     float *state_mem;
     sim = (sim_t){

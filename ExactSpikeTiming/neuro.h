@@ -23,7 +23,4 @@ typedef struct neuron_model_t
     float tau_L;
 } neuron_model_t;
 
-extern neuron_model_t vogelsabbott;
-extern neuron_model_t coba;
-
 #endif

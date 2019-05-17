@@ -1,12 +1,17 @@
 clear
+currentTime = datestr(now, 'HHMMSS')
+currentDate = datestr(now, 'dd mmmm, yy HH:MM:SS')
+
+
+seed = 1378;
+rng(seed);
+
 %% Define Parameters
 % Simulation parameters
 h = 0.1;            % simulation time step
 tStart = 0;
 tEnd = 100;
 tInput = 0;        % duration for which the input neurons fire
-% Select visualization: 'RASTER', 'NEURON', 'ISI'
-PLOT = 'RASTER';
 % Network parameters
 n = 1000;           % number of neurons
 ratioExIn = 4;      % ratio excitatory to inhibitory neurons
@@ -17,11 +22,14 @@ maxDelay = 5.0;
 randDelays = false;
 randWeights = false;
 INTERPOLATION = 'LINEAR';
+EXACTTIMING = false;
 
 f = 0.25;     % expected firing rate of external input neurons
 
 % Model parameters
 vaParameters
+
+tic;
 factorsH = vaFactors(h);    % precalculate integration factors for time step h
 
 % Cell array: n x (nSyn x [index, weight, delay])
@@ -47,7 +55,7 @@ for neuron = 1:n
 end
 
 spikeIndex = [];
-spikeTime = [];
+spikeTimes = [];
 %VPlotIndex = ceil(n * rand);
 VPlotIndex = 1;
 VPlot = [];
@@ -57,58 +65,63 @@ tPlot = [];
 
 %% Simulation loop
 for t = tStart:h:tEnd  
-    %% Update interval (t, t+h]
-    
-    tmpMem = stateMem;  % copy of stateMem(t)
-      
+    %% Update interval (t, t+h]  
+    tmpMem = stateMem;  % copy of stateMem(t)    
     stateUpdate = stateBuf.read(true); % Influence of spikes in interval (t, t+h] at time t+h
-  
-    % Calculate subthreshold dynamics        
-    idx = stateMem(:,1) <= tauRef-h | stateMem(:,1) > tauRef;   % non emerging neurons 
-    stateMem(idx,:) = vaAnalytic(stateMem(idx,:), factorsH);
-    stateMem(idx, 2:4) = stateMem(idx, 2:4) + stateUpdate(idx,:);
-    
-    % Neurons emerging from refractory period
-    emergingNeurons = find(stateMem(:,1) > tauRef-h & stateMem(:,1) <= tauRef);
-    % Consider neurons emerging from refractory period at t+tEm, then the
-    % interval has to be split into (t, t+tEm] and (t+tEm, t+h]    
-    if numel(emergingNeurons >= 1)
-        tEm = stateMem(emergingNeurons, 1) + h - tauRef;
-        factorsT = vaFactors(tEm);
-        factorsT(1) = 0;            % time tEm already elapsed
-        factorsT2 = vaFactors(h-tEm);
-        gamma = tEm/h;
-        for i = 1:numel(emergingNeurons)
-            neuron = emergingNeurons(i);
-            % update for 1st interval
-            stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT(i,:));
-            % stateMem(neuron, 2) = 0; -> is done in vaAnalytic already
-            % update for 2nd interval
-            stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT2(i,:));
-            stateMem(neuron, 2:4) = stateMem(neuron, 2:4) + stateUpdate(neuron,:);
-            stateMem(neuron, 2) = stateMem(neuron, 2) - gamma(i)*stateUpdate(neuron, 2);
-        end
-    end   
-    
+
+    if EXACTTIMING
+        % Calculate subthreshold dynamics        
+        idx = stateMem(:,1) <= tauRef-h | stateMem(:,1) > tauRef;   % non emerging neurons 
+        stateMem(idx,:) = vaAnalytic(stateMem(idx,:), factorsH);
+        stateMem(idx, 2:4) = stateMem(idx, 2:4) + stateUpdate(idx,:);
+        
+        % Neurons emerging from refractory period
+        emergingNeurons = find(stateMem(:,1) > tauRef-h & stateMem(:,1) <= tauRef);
+        % Consider neurons emerging from refractory period at t+tEm, then the
+        % interval has to be split into (t, t+tEm] and (t+tEm, t+h]    
+        if numel(emergingNeurons >= 1)
+            tEm = stateMem(emergingNeurons, 1) + h - tauRef;
+            factorsT = vaFactors(tEm);
+            %PROB: factorsT(:,1)
+            factorsT(1) = 0;            % time tEm already elapsed
+            factorsT2 = vaFactors(h-tEm);
+            gamma = tEm/h;
+            for i = 1:numel(emergingNeurons)
+                neuron = emergingNeurons(i);
+                % update for 1st interval
+                stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT(i,:));
+                % stateMem(neuron, 2) = 0; -> is done in vaAnalytic already
+                % update for 2nd interval
+                stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT2(i,:));
+                stateMem(neuron, 2:4) = stateMem(neuron, 2:4) + stateUpdate(neuron,:);
+                stateMem(neuron, 2) = stateMem(neuron, 2) - gamma(i)*stateUpdate(neuron, 2);
+            end
+        end   
+    else
+        stateMem(:,;) = vaAnalytic(stateMem(:,:), factorsH) + stateUpdate;
+    end
     % Collect spikes
     spikingNeurons = find(stateMem(:,2) > VTheta);
     
     if numel(spikingNeurons >= 1)
         % Get 'exact' spike timing for all spiking neurons
-        switch INTERPOLATION
-            case 'LINEAR'
-                exactTiming = linearInterpolation(tmpMem(spikingNeurons, 2), stateMem(spikingNeurons, 2), VTheta, h);
-            case 'QUADRATIC'
-                %exactTiming = quadraticInterpolation(h, tmpMem, stateMem);
-            case 'CUBIC'
-                %exactTiming = cubicInterpolation(h, tmpMem, stateMem);
+        if EXACTTIMING
+            switch INTERPOLATION
+                case 'LINEAR'
+                    spikeTiming = linearInterpolation(tmpMem(spikingNeurons, 2), stateMem(spikingNeurons, 2), VTheta, h);
+                case 'QUADRATIC'
+                    %spikeTiming = quadraticInterpolation(h, tmpMem, stateMem);
+                case 'CUBIC'
+                    %spikeTiming = cubicInterpolation(h, tmpMem, stateMem);
+            end
+        else
+            spikeTiming = 0;
         end
-        
         % Store spikes for raster plot
-        spikeTime = [spikeTime; t + exactTiming];
+        spikeTimes = [spikeTimes; t + spikeTiming];
         spikeIndex = [spikeIndex; spikingNeurons];
 
-        factorsT = vaFactors(h - exactTiming);  % Calculate integration factors for each spike
+        factorsT = vaFactors(h - spikeTiming);  % Calculate integration factors for each spike
         
         % Process spikes
         for i = 1:numel(spikingNeurons)
@@ -135,7 +148,7 @@ for t = tStart:h:tEnd
         end    
         
         % Neurons enter refractory period
-        stateMem(spikingNeurons, 1) = h-exactTiming;
+        stateMem(spikingNeurons, 1) = h-spikeTiming;
         stateMem(spikingNeurons, 2) = EL; 
     end
     
@@ -150,15 +163,16 @@ for t = tStart:h:tEnd
     tPlot = [tPlot t];
 end
 
-%% Evaluation
+runtime = toc;
 
+%% Evaluation
 ISI = [];
 f = [];
 for i = 1:n
     idx = spikeIndex == i;
-    a = diff(spikeTime(idx));
+    a = diff(spikeTimes(idx));
     ISI = [ISI; a];
-    fI = 10^3 * numel(spikeTime(idx)) / (tEnd - tStart);
+    fI = 10^3 * numel(spikeTimes(idx)) / (tEnd - tStart);
     f = [f fI];
 end
 
@@ -167,42 +181,67 @@ ISIAvg = mean(ISI);
 fAvg = mean(f);
 
 %% Plotting
-figure('units','normalized','outerposition',[0 0 1 1])
 tPlot = tStart:h:tEnd;
 linewidth = 1.5;
 
-if PLOT == "NEURON"
-    subplot(2,1,1)
-    plot(tPlot, VPlot, 'lineWidth', linewidth)
-    ylabel('V_M [mV]')
-    xlabel('t [ms]')
-    grid on
-    subplot(2,1,2)
-    plot(tPlot, conductanceEx, 'lineWidth', linewidth)
-    hold on
-    plot(tPlot, conductanceIn, 'lineWidth', linewidth)
-    ylabel('Synaptic conductance [nS]')
-    xlabel('t [ms]')
-    legend('g_E', 'g_I')
-    grid on
-elseif PLOT == "RASTER"
-    scatter(spikeTime, spikeIndex, 2.2, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
-    ylabel('neuron #')
-    xlabel('t [ms]')
-elseif PLOT == "ISI"
-    histogram(ISI, 'Normalization','count', 'FaceColor', 'black', 'EdgeColor', 'white', 'FaceAlpha', 1.0)
-    xlabel('Interspike interval [ms]')
-    ylabel('Number of occurences')
-    grid on
-    %xlim([0 200])
-elseif PLOT == "FIRINGRATE"
-    histogram(f, 30, 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
-    xlabel('Firing rate [Hz]')
-    ylabel('Number of occurences')
-end
 
-%% Output
-fprintf("========= Average values =========\n")
-fprintf("Membrane voltage:\t\t %0.2f mV\n", VAvg)
-fprintf("Firing rate:\t\t\t %0.2f Hz\n", fAvg)
-fprintf("Interspike interval:\t %0.2f ms\n", ISIAvg)
+% Plot state variables for a single neuron
+p(1) = figure('units','normalized','outerposition',[0 0 1 1])
+subplot(2,1,1)
+plot(tPlot, VPlot, 'lineWidth', linewidth)
+ylabel('V_M [mV]')
+xlabel('t [ms]')
+grid on
+subplot(2,1,2)
+plot(tPlot, conductanceEx, 'lineWidth', linewidth)
+hold on
+plot(tPlot, conductanceIn, 'lineWidth', linewidth)
+ylabel('Synaptic conductance [nS]')
+xlabel('t [ms]')
+legend('g_E', 'g_I')
+grid on
+
+% Rasterplot
+p(2) = figure('units','normalized','outerposition',[0 0 1 1])
+scatter(spikeTimes, spikeIndex, 2.2, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
+ylabel('neuron #')
+xlabel('t [ms]')
+
+% Plot ISI histogram
+p(3) = figure('units','normalized','outerposition',[0 0 1 1])
+histogram(ISI, 'Normalization','count', 'FaceColor', 'black', 'EdgeColor', 'white', 'FaceAlpha', 1.0)
+xlabel('Interspike interval [ms]')
+ylabel('Number of occurences')
+grid on
+%xlim([0 200])
+p(4)
+histogram(f, 30, 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
+xlabel('Firing rate [Hz]')
+ylabel('Number of occurences')
+
+% Save figures, simulation parameters and statistics
+if EXACTTIMING
+    filename = strcat("simulations/Exact", currentTime);
+else 
+    filename = strcat("simulations/Standard", currentTime);
+end
+savefig(p, strcat(filename, ".fig"));
+close(p);
+
+fd = fopen(strcat(filename, ".txt"), "wt");
+fprintf(fd, "Simulation of Vogels/Abbott network\n");
+fprintf(fd, "Date: %s", currentDate);
+fprintf(fd, "============ Simulation parameters ============\n");
+fprintf(fd, "Time step: %f ms", h);
+fprintf(fd, "Simulation time: %i ms to %i ms", tStart, tEnd);
+fprintf(fd, "Input time: %i ms", tInput);
+fprintf(fd, "============== Network parameters =============\n");
+fprintf(fd, "Number of neurons: %i", n);
+fprintf(fd, "Ratio exc. to inh. neurons: %i", ratioExIn);
+fprintf(fd, "Connection probability %f", pConn);
+fprintf(fd, "=============== Average values ================\n")
+fprintf(fd, "Membrane voltage:\t\t %0.2f mV\n", VAvg)
+fprintf(fd, "Firing rate:\t\t\t %0.2f Hz\n", fAvg)
+fprintf(fd, "Interspike interval:\t %0.2f ms\n", ISIAvg)
+
+fclose(fd);
