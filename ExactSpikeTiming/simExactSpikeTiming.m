@@ -1,6 +1,6 @@
 clear
-currentTime = datestr(now, 'HHMMSS')
-currentDate = datestr(now, 'dd mmmm, yy HH:MM:SS')
+currentTime = datestr(now, 'HHMMSS');
+currentDate = datestr(now, 'dd mmmm, yy HH:MM:SS');
 
 
 seed = 1378;
@@ -22,7 +22,7 @@ maxDelay = 5.0;
 randDelays = false;
 randWeights = false;
 INTERPOLATION = 'LINEAR';
-EXACTTIMING = false;
+EXACTTIMING = true;
 
 f = 0.25;     % expected firing rate of external input neurons
 
@@ -64,7 +64,12 @@ conductanceIn = [];
 tPlot = [];
 
 %% Simulation loop
-for t = tStart:h:tEnd  
+for t = tStart:h:tEnd 
+    VPlot = [VPlot stateMem(VPlotIndex,2)];
+    conductanceEx = [conductanceEx stateMem(VPlotIndex, 3)];
+    conductanceIn = [conductanceIn stateMem(VPlotIndex, 4)];
+    tPlot = [tPlot t];
+    
     %% Update interval (t, t+h]  
     tmpMem = stateMem;  % copy of stateMem(t)    
     stateUpdate = stateBuf.read(true); % Influence of spikes in interval (t, t+h] at time t+h
@@ -82,15 +87,15 @@ for t = tStart:h:tEnd
         if numel(emergingNeurons >= 1)
             tEm = stateMem(emergingNeurons, 1) + h - tauRef;
             factorsT = vaFactors(tEm);
-            %PROB: factorsT(:,1)
-            factorsT(1) = 0;            % time tEm already elapsed
+            % PROB
+            factorsT(1) = 0;            % time tEm already elapsed, did it really?
             factorsT2 = vaFactors(h-tEm);
             gamma = tEm/h;
             for i = 1:numel(emergingNeurons)
                 neuron = emergingNeurons(i);
                 % update for 1st interval
                 stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT(i,:));
-                % stateMem(neuron, 2) = 0; -> is done in vaAnalytic already
+                stateMem(neuron,2) = 0;   % neuron is still in refractory period
                 % update for 2nd interval
                 stateMem(neuron,:) = vaAnalytic(stateMem(neuron,:), factorsT2(i,:));
                 stateMem(neuron, 2:4) = stateMem(neuron, 2:4) + stateUpdate(neuron,:);
@@ -98,7 +103,8 @@ for t = tStart:h:tEnd
             end
         end   
     else
-        stateMem(:,;) = vaAnalytic(stateMem(:,:), factorsH) + stateUpdate;
+        stateMem = vaAnalytic(stateMem, factorsH);
+        stateMem(:,2:4) = stateMem(:,2:4) + stateUpdate;
     end
     % Collect spikes
     spikingNeurons = find(stateMem(:,2) > VTheta);
@@ -115,7 +121,7 @@ for t = tStart:h:tEnd
                     %spikeTiming = cubicInterpolation(h, tmpMem, stateMem);
             end
         else
-            spikeTiming = 0;
+            spikeTiming = zeros(numel(spikingNeurons), 1);
         end
         % Store spikes for raster plot
         spikeTimes = [spikeTimes; t + spikeTiming];
@@ -148,19 +154,16 @@ for t = tStart:h:tEnd
         end    
         
         % Neurons enter refractory period
-        stateMem(spikingNeurons, 1) = h-spikeTiming;
-        stateMem(spikingNeurons, 2) = EL; 
+        stateMem(spikingNeurons, 1) = h-spikeTiming; 
     end
+    
+    %stateMem(stateMem(:,1) < tauRef, 2) = EL;
     
     % Process input spikes
     
     if mod(t, 5) < 0.1
         fprintf('Time step t = %1.f ms\n', t)
     end
-    VPlot = [VPlot stateMem(VPlotIndex,2)];
-    conductanceEx = [conductanceEx stateMem(VPlotIndex, 3)];
-    conductanceIn = [conductanceIn stateMem(VPlotIndex, 4)];
-    tPlot = [tPlot t];
 end
 
 runtime = toc;
@@ -186,7 +189,7 @@ linewidth = 1.5;
 
 
 % Plot state variables for a single neuron
-p(1) = figure('units','normalized','outerposition',[0 0 1 1])
+p(1) = figure('units','normalized','outerposition',[0 0 1 1]);
 subplot(2,1,1)
 plot(tPlot, VPlot, 'lineWidth', linewidth)
 ylabel('V_M [mV]')
@@ -202,22 +205,22 @@ legend('g_E', 'g_I')
 grid on
 
 % Rasterplot
-p(2) = figure('units','normalized','outerposition',[0 0 1 1])
+p(2) = figure('units','normalized','outerposition',[0 0 1 1]);
 scatter(spikeTimes, spikeIndex, 2.2, 's','MarkerEdgeColor','k','MarkerFaceColor','k')
 ylabel('neuron #')
 xlabel('t [ms]')
 
-% Plot ISI histogram
-p(3) = figure('units','normalized','outerposition',[0 0 1 1])
-histogram(ISI, 'Normalization','count', 'FaceColor', 'black', 'EdgeColor', 'white', 'FaceAlpha', 1.0)
-xlabel('Interspike interval [ms]')
-ylabel('Number of occurences')
-grid on
-%xlim([0 200])
-p(4)
-histogram(f, 30, 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
-xlabel('Firing rate [Hz]')
-ylabel('Number of occurences')
+% % Plot ISI histogram
+% p(3) = figure('units','normalized','outerposition',[0 0 1 1]);
+% histogram(ISI, 'Normalization','count', 'FaceColor', 'black', 'EdgeColor', 'white', 'FaceAlpha', 1.0)
+% xlabel('Interspike interval [ms]')
+% ylabel('Number of occurences')
+% grid on
+% %xlim([0 200])
+% p(4) = figure('units','normalized','outerposition',[0 0 1 1]);
+% histogram(f, 30, 'FaceColor', [0.184 0.333 0.592], 'EdgeColor', [0.184 0.333 0.592])
+% xlabel('Firing rate [Hz]')
+% ylabel('Number of occurences')
 
 % Save figures, simulation parameters and statistics
 if EXACTTIMING
@@ -226,22 +229,23 @@ else
     filename = strcat("simulations/Standard", currentTime);
 end
 savefig(p, strcat(filename, ".fig"));
-close(p);
+%close(p);
 
 fd = fopen(strcat(filename, ".txt"), "wt");
 fprintf(fd, "Simulation of Vogels/Abbott network\n");
-fprintf(fd, "Date: %s", currentDate);
+fprintf(fd, "Date: %s\n", currentDate);
+fprintf(fd, "Runtime: %f s\n");
 fprintf(fd, "============ Simulation parameters ============\n");
-fprintf(fd, "Time step: %f ms", h);
-fprintf(fd, "Simulation time: %i ms to %i ms", tStart, tEnd);
-fprintf(fd, "Input time: %i ms", tInput);
+fprintf(fd, "Time step: %f ms\n", h);
+fprintf(fd, "Simulation time: %i ms to %i ms\n", tStart, tEnd);
+fprintf(fd, "Input time: %i ms\n", tInput);
 fprintf(fd, "============== Network parameters =============\n");
-fprintf(fd, "Number of neurons: %i", n);
-fprintf(fd, "Ratio exc. to inh. neurons: %i", ratioExIn);
-fprintf(fd, "Connection probability %f", pConn);
-fprintf(fd, "=============== Average values ================\n")
-fprintf(fd, "Membrane voltage:\t\t %0.2f mV\n", VAvg)
-fprintf(fd, "Firing rate:\t\t\t %0.2f Hz\n", fAvg)
-fprintf(fd, "Interspike interval:\t %0.2f ms\n", ISIAvg)
+fprintf(fd, "Number of neurons: %i\n", n);
+fprintf(fd, "Ratio exc. to inh. neurons: %i\n", ratioExIn);
+fprintf(fd, "Connection probability %f\n", pConn);
+fprintf(fd, "=============== Average values ================\n");
+fprintf(fd, "Membrane voltage:\t %0.2f mV\n", VAvg);
+fprintf(fd, "Firing rate:\t\t %0.2f Hz\n", fAvg);
+fprintf(fd, "Interspike interval:\t %0.2f ms\n", ISIAvg);
 
 fclose(fd);

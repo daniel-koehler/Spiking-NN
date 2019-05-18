@@ -1,0 +1,14 @@
+Simulation of Vogels/Abbott network
+Date: 17 May, 19 13:27:53
+============ Simulation parameters ============
+Time step: 0.100000 ms
+Simulation time: 0 ms to 100 ms
+Input time: 0 ms
+============== Network parameters =============
+Number of neurons: 1000
+Ratio exc. to inh. neurons: 4
+Connection probability 0.020000
+=============== Average values ================
+Membrane voltage:	 1.88 mV
+Firing rate:		 64.41 Hz
+Interspike interval:	 8.99 ms
