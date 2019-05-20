@@ -15,6 +15,6 @@ Y = zeros(size(Y0));
 Y(:,1) = Y0(:,1) + factors(1);
 Y(:,2) = factors(4) * Y0(:,2) + factors(5) * Y0(:,3) + factors(6) * Y0(:,4) + factors(7);
 % neurons in refractory period
-Y((Y(:,1) < tauRef), 2) = EL;        % clamp membrane voltage to resting potential
+%Y((Y(:,1) < tauRef), 2) = EL;        % clamp membrane voltage to resting potential
 Y(:,3) = factors(2) * Y0(:,3);
 Y(:,4) = factors(3) * Y0(:,4);
